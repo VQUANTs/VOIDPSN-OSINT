@@ -100,21 +100,17 @@ email_menu() {
 }
 subdomain_menu() {
   banner
-  echo -e "  ${CYN}[1]${NC} subfinder"
-  echo -e "  ${CYN}[2]${NC} assetfinder"
-  echo -e "  ${CYN}[3]${NC} both + merge"
+  echo -e "  ${CYN}[1]${NC} multi-tool hunt  (subfinder + assetfinder + crt.sh + wayback)"
+  echo -e "  ${CYN}[2]${NC} subfinder only"
+  echo -e "  ${CYN}[3]${NC} assetfinder only"
   echo -e "  ${CYN}[0]${NC} back"
   read -rp "  > " c
   case "$c" in
-    1) d=$(ask "domain"); [ -n "$d" ] && subfinder -d "$d" -silent | tee "$HOME/osint-results/subs-$d.txt"; pause ;;
-    2) d=$(ask "domain"); [ -n "$d" ] && assetfinder "$d" | tee "$HOME/osint-results/asset-$d.txt"; pause ;;
-    3) d=$(ask "domain"); [ -n "$d" ] && {
-         subfinder -d "$d" -silent > /tmp/v1.txt
-         assetfinder "$d" > /tmp/v2.txt
-         cat /tmp/v1.txt /tmp/v2.txt | sort -u | anew "$HOME/osint-results/subs-$d.txt"
-         echo "  → $(wc -l < "$HOME/osint-results/subs-$d.txt") unique subdomains"
-       }; pause ;;
+    1) d=$(ask "domain"); [ -n "$d" ] && ~/osint-hunt-domain.sh "$d"; pause ;;
+    2) d=$(ask "domain"); [ -n "$d" ] && subfinder -d "$d" -silent | tee "$HOME/osint-results/subs-$d.txt"; pause ;;
+    3) d=$(ask "domain"); [ -n "$d" ] && assetfinder "$d" | tee "$HOME/osint-results/asset-$d.txt"; pause ;;
   esac
+}
 }
 
 wayback_menu() {
