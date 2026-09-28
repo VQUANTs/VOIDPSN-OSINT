@@ -50,16 +50,13 @@ EOF
 
 menu() {
   banner
-  echo -e "  ${CYN}[1]${NC}  multi-tool username hunt  (parallel — recommended)"
-  echo -e "  ${CYN}[2]${NC}  sherlock                  (single tool)"
-  echo -e "  ${CYN}[3]${NC}  maigret                   (single tool, 6200+ sites)"
-  echo -e "  ${CYN}[4]${NC}  email intelligence        (holehe / socialscan)"
-  echo -e "  ${CYN}[5]${NC}  subdomain enum            (subfinder / assetfinder)"
-  echo -e "  ${CYN}[6]${NC}  historical urls           (waybackurls)"
-  echo -e "  ${CYN}[7]${NC}  full recon chain          (subs → dedupe → urls)"
-  echo -e "  ${CYN}[8]${NC}  instagram intel           (toutatis / instaloader)"
-  echo -e "  ${CYN}[9]${NC}  results viewer"
-  echo -e "  ${CYN}[10]${NC} tool status"
+  echo -e "  ${CYN}[1]${NC}  username hunt       (multi-tool, parallel)"
+  echo -e "  ${CYN}[2]${NC}  email intelligence  (multi-tool, parallel)"
+  echo -e "  ${CYN}[3]${NC}  domain recon        (multi-tool, parallel)"
+  echo -e "  ${CYN}[4]${NC}  instagram intel     (toutatis / instaloader)"
+  echo -e "  ${CYN}[5]${NC}  full recon chain    (subs → dedupe → urls)"
+  echo -e "  ${CYN}[6]${NC}  results viewer"
+  echo -e "  ${CYN}[7]${NC}  tool status"
   echo -e "  ${CYN}[0]${NC}  exit"
   echo
   echo -e "${BLU}=====================================================${NC}"
@@ -98,7 +95,8 @@ email_menu() {
     3) e=$(ask "email"); [ -n "$e" ] && socialscan "$e"; pause ;;
   esac
 }
-subdomain_menu() {
+
+domain_menu() {
   banner
   echo -e "  ${CYN}[1]${NC} multi-tool hunt  (subfinder + assetfinder + crt.sh + wayback)"
   echo -e "  ${CYN}[2]${NC} subfinder only"
@@ -111,14 +109,17 @@ subdomain_menu() {
     3) d=$(ask "domain"); [ -n "$d" ] && assetfinder "$d" | tee "$HOME/osint-results/asset-$d.txt"; pause ;;
   esac
 }
-}
 
-wayback_menu() {
+insta_menu() {
   banner
-  d=$(ask "domain")
-  [ -n "$d" ] && waybackurls "$d" | anew "$HOME/osint-results/wayback-$d.txt"
-  echo "  saved to $HOME/osint-results/wayback-$d.txt"
-  pause
+  echo -e "  ${CYN}[1]${NC} toutatis       (profile info)"
+  echo -e "  ${CYN}[2]${NC} instaloader    (download profile)"
+  echo -e "  ${CYN}[0]${NC} back"
+  read -rp "  > " c
+  case "$c" in
+    1) u=$(ask "instagram username"); [ -n "$u" ] && toutatis -u "$u" -s; pause ;;
+    2) u=$(ask "instagram username"); [ -n "$u" ] && instaloader --no-videos --no-captions "$u"; pause ;;
+  esac
 }
 
 full_recon() {
@@ -138,36 +139,37 @@ full_recon() {
   pause
 }
 
-insta_menu() {
-  banner
-  echo -e "  ${CYN}[1]${NC} toutatis       (profile info)"
-  echo -e "  ${CYN}[2]${NC} instaloader    (download profile)"
-  echo -e "  ${CYN}[0]${NC} back"
-  read -rp "  > " c
-  case "$c" in
-    1) u=$(ask "instagram username"); [ -n "$u" ] && toutatis -u "$u" -s; pause ;;
-    2) u=$(ask "instagram username"); [ -n "$u" ] && instaloader --no-videos --no-captions "$u"; pause ;;
-  esac
-}
-
 results_menu() {
   banner
-  [ -d "$HOME/osint-results" ] && ls -la "$HOME/osint-results" | tail -n +2 || echo "  no results yet"
+  if [ -d "$HOME/osint-results" ]; then
+    ls -la "$HOME/osint-results" | tail -n +2
+  else
+    echo "  no results yet"
+  fi
   pause
 }
 
 status_menu() {
   banner
   echo -e "${CYN}python tools:${NC}"
-  for t in sherlock maigret holehe socialscan toutatis instaloader; do
+  for t in sherlock maigret holehe socialscan toutatis instaloader h8mail; do
     have "$t" && echo -e "  ${GRN}✓${NC} $t" || echo -e "  ${RED}✗${NC} $t"
   done
-  [ -f "$HOME/osint/blackbird/blackbird.py" ] && echo -e "  ${GRN}✓${NC} blackbird" || echo -e "  ${RED}✗${NC} blackbird"
+  if [ -f "$HOME/osint/blackbird/blackbird.py" ]; then
+    echo -e "  ${GRN}✓${NC} blackbird"
+  else
+    echo -e "  ${RED}✗${NC} blackbird"
+  fi
   echo
   echo -e "${CYN}go tools:${NC}"
   for t in subfinder assetfinder waybackurls anew enola; do
     go_have "$t" && echo -e "  ${GRN}✓${NC} $t" || echo -e "  ${RED}✗${NC} $t"
   done
+  echo
+  echo -e "${CYN}hunters:${NC}"
+  [ -x "$HOME/osint-hunt.sh" ] && echo -e "  ${GRN}✓${NC} osint-hunt.sh (username)" || echo -e "  ${RED}✗${NC} osint-hunt.sh"
+  [ -x "$HOME/osint-hunt-email.sh" ] && echo -e "  ${GRN}✓${NC} osint-hunt-email.sh" || echo -e "  ${RED}✗${NC} osint-hunt-email.sh"
+  [ -x "$HOME/osint-hunt-domain.sh" ] && echo -e "  ${GRN}✓${NC} osint-hunt-domain.sh" || echo -e "  ${RED}✗${NC} osint-hunt-domain.sh"
   pause
 }
 
@@ -175,17 +177,14 @@ while true; do
   menu
   read -rp "  select > " choice
   case "$choice" in
-    1)  username_menu ;;
-    2)  u=$(ask "username"); [ -n "$u" ] && sherlock "$u" --print-found --no-color; pause ;;
-    3)  u=$(ask "username"); [ -n "$u" ] && maigret "$u" --no-color --no-progressbar -fo "$HOME/osint-results/maigret-$u"; pause ;;
-    4)  email_menu ;;
-    5)  subdomain_menu ;;
-    6)  wayback_menu ;;
-    7)  full_recon ;;
-    8)  insta_menu ;;
-    9)  results_menu ;;
-    10) status_menu ;;
-    0)  clear; exit 0 ;;
-    *)  ;;
+    1) username_menu ;;
+    2) email_menu ;;
+    3) domain_menu ;;
+    4) insta_menu ;;
+    5) full_recon ;;
+    6) results_menu ;;
+    7) status_menu ;;
+    0) clear; exit 0 ;;
+    *) ;;
   esac
 done
