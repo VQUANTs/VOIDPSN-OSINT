@@ -1,0 +1,9 @@
+*.log
+*.tmp
+__pycache__/
+*.pyc
+results/
+osint-results/
+venv/
+.venv/
+.env
